@@ -121,6 +121,7 @@ public:
    void onRemove();
    void render(const Point2I &pos);
 };
+DefineConsoleType(TypeGuiCursor)
 
 /// A GuiBorderProfile holds on the information needed for a single border of a GuiControl.
 /// GuiBorderProfiles can be assigned to a GuiControlProfile to cover one or all of the borders.
@@ -165,7 +166,6 @@ public:
    S32  mRefCount;                                 ///< Used to determine if any controls are using this profile
    bool mTabable;                                  ///< True if this object is accessable from using the tab key
 
-   static StringTableEntry  sFontCacheDirectory;
    bool mCanKeyFocus;                              ///< True if the object can be given keyboard focus (in other words, made a first responder @see GuiControl)
    bool mUseInput;                                 ///< True if input events like a click can be passed to this object. False will pass events to the parent and this object and its children will not be evaluated.
 
@@ -189,7 +189,8 @@ public:
    GuiBorderProfile* mBorderRight;
 
    // font members
-   StringTableEntry  mFontType;                    ///< Font face name for the control
+   StringTableEntry  mFontType;
+   StringTableEntry  mFontDirectory;                    ///< Font face name for the control
    S32               mFontSize;                    ///< Font size for the control
    enum {
       BaseColor = 0,
@@ -227,9 +228,7 @@ public:
 	   MiddleVAlign
    };
    VertAlignmentType mVAlignment;				   ///< Vertical text alignment
-
-   bool mReturnTab;                                ///< Used in GuiTextEditCtrl to specify if a tab-event should be simulated when return is pressed.
-   bool mNumbersOnly;                              ///< For text controls, true if this should only accept numerical data
+                             
    bool mMouseOverSelected;                        ///< True if this object should be "selected" while the mouse is over it
    ColorI mCursorColor;                            ///< Color for the blinking cursor in text fields (for example)
 
@@ -292,6 +291,9 @@ public:
 
    const ColorI& getFillColor(const GuiControlState state); //Returns the fill color based on the state.
    const ColorI& getFontColor(const GuiControlState state); //Returns the font color based on the state.
+   bool usesAssetRendering(const GuiControlState state);
+   bool usesBitmapRendering(const GuiControlState state);
+   bool usesDefaultRendering(const GuiControlState state);
 
    GuiBorderProfile* getLeftBorder() { return mBorderLeft; }
    GuiBorderProfile* getRightBorder() { return mBorderRight; }

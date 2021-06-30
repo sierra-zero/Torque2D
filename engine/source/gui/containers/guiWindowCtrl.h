@@ -23,10 +23,6 @@
 #ifndef _GUIWINDOWCTRL_H_
 #define _GUIWINDOWCTRL_H_
 
-#ifndef _GUITEXTCTRL_H_
-#include "gui/guiTextCtrl.h"
-#endif
-
 /// @addtogroup gui_container_group Containers
 ///
 /// @ingroup gui_group Gui System
@@ -80,6 +76,14 @@ class GuiWindowCtrl : public GuiControl
 	  GuiControlProfile *mMinButtonProfile; //Used to render the close button.
 	  GuiControlProfile *mMaxButtonProfile; //Used to render the close button.
 
+	  // Sizing Cursors
+	  GuiCursor*        mLeftRightCursor;
+	  GuiCursor*        mUpDownCursor;
+	  GuiCursor*        mNWSECursor;
+
+	  void ResizeComplete();
+	  void MoveComplete();
+
    public:
 	   enum Region
 	   {
@@ -123,6 +127,8 @@ class GuiWindowCtrl : public GuiControl
       void onTouchUp(const GuiEvent &event);
 	  void onTouchLeave(const GuiEvent &event);
 
+	  virtual void onFocus();
+
       //only cycle tabs through the current window, so overwrite the method
       GuiControl* findNextTabable(GuiControl *curResponder, bool firstCall = true);
       GuiControl* findPrevTabable(GuiControl *curResponder, bool firstCall = true);
@@ -133,8 +139,17 @@ class GuiWindowCtrl : public GuiControl
       void selectWindow(void);
 
       void onRender(Point2I offset, const RectI &updateRect);
-	  RectI renderButtons(const RectI &contentRect);
+	  RectI renderButtons(const Point2I &offset, const RectI &contentRect);
 	  RectI renderButton(const RectI &contentRect, S32 distanceFromEdge, GuiControlState buttonState, GuiControlProfile *profile, Icon defaultIcon);
+
+	  void setControlContentProfile(GuiControlProfile* prof);
+	  void setControlCloseButtonProfile(GuiControlProfile* prof);
+	  void setControlMinButtonProfile(GuiControlProfile* prof);
+	  void setControlMaxButtonProfile(GuiControlProfile* prof);
+
+	  void setControlLeftRightCursor(GuiCursor* cursor);
+	  void setControlUpDownCursor(GuiCursor* cursor);
+	  void setControlNWSECursor(GuiCursor* cursor);
 };
 /// @}
 

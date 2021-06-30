@@ -25,13 +25,18 @@ function AssetAdmin::create(%this)
 	exec("./AssetDictionary.cs");
 	exec("./AssetWindow.cs");
 	exec("./AssetDictionaryButton.cs");
+	exec("./AssetInspector.cs");
+	exec("./AssetAudioPlayButton.cs");
 
 	%this.guiPage = EditorCore.RegisterEditor("Asset Manager", %this);
 	%this.guiPage.add(%this.buildAssetWindow());
+	%this.guiPage.add(%this.buildAudioPlayButton());
 	%this.guiPage.add(%this.buildLibrary());
 	%this.guiPage.add(%this.buildInspector());
 
 	EditorCore.FinishRegistration(%this.guiPage);
+
+	%this.isOpen = false;
 }
 
 function AssetAdmin::buildLibrary(%this)
@@ -56,8 +61,8 @@ function AssetAdmin::buildLibrary(%this)
 
 	%this.dictionaryList = new GuiChainCtrl()
 	{
-		HorizSizing="bottom";
-		VertSizing="right";
+		HorizSizing="right";
+		VertSizing="bottom";
 		Position="0 0";
 		Extent="310 768";
 		MinExtent="220 200";
@@ -67,6 +72,10 @@ function AssetAdmin::buildLibrary(%this)
 
 	%this.dictionaryList.add(%this.buildDictionary("Images", "ImageAsset"));
 	%this.dictionaryList.add(%this.buildDictionary("Animations", "AnimationAsset"));
+	%this.dictionaryList.add(%this.buildDictionary("Particle Effects", "ParticleAsset"));
+	%this.dictionaryList.add(%this.buildDictionary("Fonts", "FontAsset"));
+	%this.dictionaryList.add(%this.buildDictionary("Audio", "AudioAsset"));
+	//%this.dictionaryList.add(%this.buildDictionary("Spines", "SpineAsset"));
 
 	return %this.libScroller;
 }
@@ -78,8 +87,8 @@ function AssetAdmin::buildDictionary(%this, %title, %type)
 		Class = AssetDictionary;
 		Text=%title;
 		command="";
-		HorizSizing="bottom";
-		VertSizing="right";
+		HorizSizing="right";
+		VertSizing="bottom";
 		Position="0 0";
 		Extent="310 22";
 		MinExtent="80 22";
@@ -93,25 +102,18 @@ function AssetAdmin::buildDictionary(%this, %title, %type)
 
 function AssetAdmin::buildInspector(%this)
 {
-	%this.insScroller = new GuiScrollCtrl()
+	%this.inspector = new GuiControl()
 	{
+		class = "AssetInspector";
 		HorizSizing="width";
 		VertSizing="top";
 		Position="0 444";
 		Extent="700 324";
 		MinExtent="350 222";
-		hScrollBar="alwaysOn";
-		vScrollBar="alwaysOn";
-		constantThumbHeight="0";
-		showArrowButtons="1";
-		scrollBarThickness="14";
 	};
-	ThemeManager.setProfile(%this.insScroller, "scrollingPanelProfile");
-	ThemeManager.setProfile(%this.insScroller, "scrollingPanelThumbProfile", ThumbProfile);
-	ThemeManager.setProfile(%this.insScroller, "scrollingPanelTrackProfile", TrackProfile);
-	ThemeManager.setProfile(%this.insScroller, "scrollingPanelArrowProfile", ArrowProfile);
+	ThemeManager.setProfile(%this.inspector, "overlayProfile");
 
-	return %this.insScroller;
+	return %this.inspector;
 }
 
 function AssetAdmin::buildAssetWindow(%this)
@@ -127,15 +129,51 @@ function AssetAdmin::buildAssetWindow(%this)
 		extent = "700 444";
 		HorizSizing="width";
 		VertSizing="height";
-		minExtent = "175 111";
+		minExtent = "0 0";
 		cameraPosition = "0 0";
 		cameraSize = "175 111";
-		useWindowInputEvents = false;
+		useWindowInputEvents = true;
 		useObjectInputEvents = true;
+		constantThumbHeight = false;
+		scrollBarThickness = 14;
+		 showArrowButtons = false;
 	};
+	ThemeManager.setProfile(%this.assetWindow, "thumbProfile", ThumbProfile);
+	ThemeManager.setProfile(%this.assetWindow, "trackProfile", TrackProfile);
+	ThemeManager.setProfile(%this.assetWindow, "scrollArrowProfile", ArrowProfile);
+
 	%this.assetWindow.setScene(%this.assetScene);
+	%this.assetWindow.setViewLimitOn("-87.5 -55.5 87.5 55.5");
+	%this.assetWindow.setShowScrollBar(true);
+	%this.assetWindow.setMouseWheelScrolls(false);
 
 	return %this.assetWindow;
+}
+
+function AssetAdmin::buildAudioPlayButton(%this)
+{
+	%this.audioPlayButtonContainer = new GuiControl()
+	{
+		position = "0 0";
+		extent = "700 444";
+		HorizSizing="width";
+		VertSizing="height";
+	};
+	ThemeManager.setProfile(%this.audioPlayButtonContainer, "emptyProfile");
+
+	%this.audioPlayButton = new GuiButtonCtrl()
+	{
+		class="AssetAudioPlayButton";
+		HorizSizing="center";
+		VertSizing="center";
+		Extent="100 48";
+		Visible="0";
+		Text = "Play";
+	};
+	ThemeManager.setProfile(%this.audioPlayButton, "buttonProfile");
+	%this.audioPlayButtonContainer.add(%this.audioPlayButton);
+
+	return %this.audioPlayButtonContainer;
 }
 
 function AssetAdmin::destroy(%this)
@@ -147,14 +185,32 @@ function AssetAdmin::open(%this)
 {
 	%this.Dictionary["ImageAsset"].load();
 	%this.Dictionary["AnimationAsset"].load();
+	%this.Dictionary["ParticleAsset"].load();
+	%this.Dictionary["FontAsset"].load();
+	%this.Dictionary["AudioAsset"].load();
+	//%this.Dictionary["SpineAsset"].load();
 
 	%this.assetScene.setScenePause(false);
+	%this.isOpen = true;
 }
 
 function AssetAdmin::close(%this)
 {
 	%this.Dictionary["ImageAsset"].unload();
 	%this.Dictionary["AnimationAsset"].unload();
+	%this.Dictionary["ParticleAsset"].unload();
+	%this.Dictionary["FontAsset"].unload();
+	%this.Dictionary["AudioAsset"].unload();
+	//%this.Dictionary["SpineAsset"].unload();
 
 	%this.assetScene.setScenePause(true);
+	%this.isOpen = false;
+}
+
+function AssetBase::onRefresh(%this)
+{
+	if(AssetAdmin.isOpen  && isObject(AssetAdmin.chosenButton))
+	{
+		AssetAdmin.chosenButton.onClick();
+	}
 }

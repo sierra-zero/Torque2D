@@ -29,7 +29,6 @@
 #include "io/fileStream.h"
 #include "gui/containers/guiScrollCtrl.h"
 #include "gui/editor/guiEditCtrl.h"
-#include "gui/guiPopUpCtrl.h"
 #include "gui/guiDefaultControlRender.h"
 
 #include "guiTabBookCtrl_ScriptBinding.h"
@@ -50,7 +49,7 @@ IMPLEMENT_CONOBJECT(GuiTabBookCtrl);
 GuiTabBookCtrl::GuiTabBookCtrl()
 {
    VECTOR_SET_ASSOCIATION(mPages);
-   mLastFontHeight = 0;
+   mFontHeight = 0;
    mTabPosition = GuiTabBookCtrl::AlignTop;
    mLastTabPosition = mTabPosition;
    mActivePage = NULL;
@@ -158,7 +157,7 @@ void GuiTabBookCtrl::onChildAdded( GuiControl *child )
    // Calculate Page Information
    calculatePageTabs();
 
-   child->resize( mPageRect.point, mPageRect.extent );
+   child->resize( Point2I(0, 0), mPageRect.extent );
 }
 
 
@@ -197,6 +196,7 @@ void GuiTabBookCtrl::setControlTabProfile(GuiControlProfile* prof)
     if (mAwake)
         mTabProfile->incRefCount();
 
+	calculatePageTabs();
 }
 
 void GuiTabBookCtrl::addNewPage()
@@ -224,15 +224,13 @@ void GuiTabBookCtrl::resize(const Point2I &newPosition, const Point2I &newExtent
    for(i = begin(); i != end(); i++)
    {
       GuiControl *ctrl = static_cast<GuiControl *>(*i);
-      ctrl->resize( mPageRect.point, mPageRect.extent );
+      ctrl->resize( Point2I(0, 0), mPageRect.extent );
    }
 }
 
 void GuiTabBookCtrl::childResized(GuiControl *child)
 {
-   //Parent::childResized( child );
-
-   child->resize( mPageRect.point, mPageRect.extent );
+   child->resize( Point2I(0,0), mPageRect.extent );
 }
 
 Point2I GuiTabBookCtrl::getTabLocalCoord(const Point2I &src)
@@ -344,7 +342,7 @@ void GuiTabBookCtrl::onRender(Point2I offset, const RectI &updateRect)
 	if(mPageRect.isValidRect())
 	{
 		// Render Children
-		renderChildControls(offset, mBounds, updateRect);
+		renderChildControls(offset, RectI(offset + mPageRect.point, mPageRect.extent), updateRect);
 	}
 }
 
@@ -489,17 +487,18 @@ void GuiTabBookCtrl::solveDirty()
       mLastTabPosition = mTabPosition;
       dirty = true;
    }
-
-   if( mTabProfile != NULL && mTabProfile->mFont != NULL && mTabProfile->mFont->getHeight() != mLastFontHeight )
+   else if( mTabProfile != NULL && mTabProfile->mFont != NULL && mTabProfile->mFont->getHeight() != mFontHeight )
    {
-	   mLastFontHeight = mTabProfile->mFont->getHeight();
       dirty = true;
    }
-
-   if( mTabWidth != mLastTabWidth )
+   else if(mPages.size() > 0 && mTabProfile != NULL && mTabProfile->mFont != NULL)
    {
-      mLastTabWidth = mTabWidth;
-      dirty = true;
+	   S32 tabWidth = calculatePageTabWidth(mPages[0].Page);
+	   tabWidth = getMax(tabWidth, mMinTabWidth);
+	   if(mTabWidth != tabWidth)
+	   {
+		  dirty = true;
+	   }
    }
 
    if( dirty )
@@ -549,6 +548,7 @@ void GuiTabBookCtrl::calculatePageTabs()
    S32 tabHeight  = 0;
    RectI innerRect = getInnerRect(mBounds.point, mBounds.extent, NormalState, mProfile);
    Point2I fontBasedBounds = getOuterExtent(Point2I(mTabProfile->mFont->getHeight(), mTabProfile->mFont->getHeight()), NormalState, mTabProfile);
+   mFontHeight = mTabProfile->mFont->getHeight();
 
    if (mTabPosition == AlignTop || mTabPosition == AlignBottom)
    {
@@ -564,6 +564,12 @@ void GuiTabBookCtrl::calculatePageTabs()
       // Fetch Tab Width
       S32 tabWidth = calculatePageTabWidth( mPages[i].Page );
       tabWidth = getMax( tabWidth, mMinTabWidth );
+
+	  if (i == 0)
+	  {
+		  mTabWidth = tabWidth;
+	  }
+
       TabHeaderInfo &info = mPages[i];
       switch( mTabPosition )
       {

@@ -371,7 +371,7 @@ bool GuiCanvas::processInputEvent(const InputEvent *event)
          //if not handled, search for an accelerator
          for (U32 i = 0; i < (U32)mAcceleratorMap.size(); i++)
          {
-            if ((U32)mAcceleratorMap[i].keyCode == (U32)event->objInst && (U32)mAcceleratorMap[i].modifier == eventModifier)
+            if ((U32)mAcceleratorMap[i].IsKeyCodeEqual(event->objInst) && (U32)mAcceleratorMap[i].modifier == eventModifier)
             {
                mAcceleratorMap[i].ctrl->acceleratorKeyPress(mAcceleratorMap[i].index);
                return true;
@@ -611,6 +611,9 @@ void GuiCanvas::rootMouseDown(const GuiEvent &event)
          GuiControl *ctrl = static_cast<GuiControl *>(*i);
          GuiControl *controlHit = ctrl->findHitControl(event.mousePoint);
 
+		 //Regardless of what the control does, it has the user's focus.
+		 controlHit->onFocus();
+
          if (controlHit->mProfile->mUseInput)
          {
             controlHit->onTouchDown(event);
@@ -660,16 +663,13 @@ void GuiCanvas::rootScreenTouchDown(const GuiEvent &event)
               
             //If the control we hit is not the same one that is locked,  
             // then unlock the existing control.  
-            if (bool(mMouseCapturedControl))  
+            if (bool(mMouseCapturedControl) && mMouseCapturedControl->isMouseLocked() && mMouseCapturedControl != controlHit)  
             {  
-                if(mMouseCapturedControl->isMouseLocked())  
-                {  
-                    if(mMouseCapturedControl != controlHit)  
-                    {  
-                        mMouseCapturedControl->onTouchLeave(event);  
-                    }  
-                }  
-            }  
+                mMouseCapturedControl->onTouchLeave(event);   
+            } 
+			
+			//Regardless of what the control does, it has the user's focus.
+			controlHit->onFocus();
               
 			if (controlHit->mProfile->mUseInput)
 			{

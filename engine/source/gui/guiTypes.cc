@@ -91,6 +91,37 @@ void GuiCursor::render(const Point2I &pos)
    dglDrawBitmap(mTextureHandle, renderPos);
 }
 
+// Setup the type, this will keep Border profiles from being listed with normal profiles.
+ConsoleType(GuiCursor, TypeGuiCursor, sizeof(GuiCursor*), "")
+
+ConsoleSetType(TypeGuiCursor)
+{
+	GuiCursor *profile = NULL;
+	if (argc == 1)
+		Sim::findObject(argv[0], profile);
+
+	AssertWarn(profile != NULL, avar("GuiCursor: requested gui cursor (%s) does not exist.", argv[0]));
+	if (!profile)
+		profile = dynamic_cast<GuiCursor*>(Sim::findObject("DefaultCursor"));
+
+	AssertFatal(profile != NULL, avar("GuiCursor: unable to find specified cursor (%s) and DefaultCursor does not exist!", argv[0]));
+
+	GuiCursor **obj = (GuiCursor **)dptr;
+	if ((*obj) == profile)
+		return;
+
+	*obj = profile;
+}
+
+ConsoleGetType(TypeGuiCursor)
+{
+	static char returnBuffer[256];
+
+	GuiCursor **obj = (GuiCursor**)dptr;
+	dSprintf(returnBuffer, sizeof(returnBuffer), "%s", *obj ? (*obj)->getName() ? (*obj)->getName() : (*obj)->getIdString() : "");
+	return returnBuffer;
+}
+
 //------------------------------------------------------------------------------
 IMPLEMENT_CONOBJECT(GuiBorderProfile);
 
@@ -262,8 +293,6 @@ static EnumTable::Enums charsetEnums[]=
 
 static EnumTable gCharsetTable(NUMCHARSETENUMS, &charsetEnums[0]);
 
-StringTableEntry GuiControlProfile::sFontCacheDirectory = "";
-
 GuiControlProfile::GuiControlProfile(void) :
    mFontColor(mFontColors[BaseColor]),
    mFontColorHL(mFontColors[ColorHL]),
@@ -292,6 +321,7 @@ GuiControlProfile::GuiControlProfile(void) :
 	
 	// default font
 	mFontType      = StringTable->EmptyString;
+	mFontDirectory = StringTable->EmptyString;
 	mFontSize      = 12;
 	mFontCharset   = TGE_ANSI_CHARSET;
 	mFontColors[BaseColor].set(255,255,255,255);
@@ -305,8 +335,6 @@ GuiControlProfile::GuiControlProfile(void) :
 	
 	mAlignment     = LeftAlign;
 	mVAlignment    = MiddleVAlign;
-	mReturnTab     = false;
-	mNumbersOnly   = false;
    mProfileForChildrenName = NULL;
 	mProfileForChildren = NULL;
 
@@ -335,6 +363,7 @@ GuiControlProfile::GuiControlProfile(void) :
 
       // default font
       mFontType = def->mFontType;
+	  mFontDirectory = def->mFontDirectory;
       mFontSize = def->mFontSize;
       mFontCharset = def->mFontCharset;
 
@@ -347,8 +376,6 @@ GuiControlProfile::GuiControlProfile(void) :
 
       //used by GuiTextCtrl
       mAlignment = def->mAlignment;
-      mReturnTab = def->mReturnTab;
-      mNumbersOnly = def->mNumbersOnly;
       mCursorColor = def->mCursorColor;
 
       // Child profile
@@ -383,8 +410,10 @@ void GuiControlProfile::initPersistFields()
    addField("borderTop",     TypeString, Offset(mTopProfileName, GuiControlProfile));
    addField("borderBottom",  TypeString, Offset(mBottomProfileName, GuiControlProfile));
 
+   addGroup("Font");
    addField("fontType",      TypeString,     Offset(mFontType, GuiControlProfile));
    addField("fontSize",      TypeS32,        Offset(mFontSize, GuiControlProfile));
+   addField("fontDirectory", TypeString,	 Offset(mFontDirectory, GuiControlProfile));
    addField("fontCharset",   TypeEnum,       Offset(mFontCharset, GuiControlProfile), 1, &gCharsetTable);
    addField("fontColors",    TypeColorI,     Offset(mFontColors, GuiControlProfile), 10);
    addField("fontColor",     TypeColorI,     Offset(mFontColors[BaseColor], GuiControlProfile));
@@ -393,12 +422,11 @@ void GuiControlProfile::initPersistFields()
    addField("fontColorSL",   TypeColorI,     Offset(mFontColors[ColorSL], GuiControlProfile));
    addField("fontColorLink", TypeColorI,     Offset(mFontColors[ColorUser0], GuiControlProfile));
    addField("fontColorLinkHL", TypeColorI,     Offset(mFontColors[ColorUser1], GuiControlProfile));
+   endGroup("Font");
 
    addField("align", TypeEnum, Offset(mAlignment, GuiControlProfile), 1, &gAlignTable);
    addField("vAlign", TypeEnum, Offset(mVAlignment, GuiControlProfile), 1, &gVAlignTable);
    addField("textOffset",    TypePoint2I,    Offset(mTextOffset, GuiControlProfile));
-   addField("returnTab",     TypeBool,       Offset(mReturnTab, GuiControlProfile));
-   addField("numbersOnly",   TypeBool,       Offset(mNumbersOnly, GuiControlProfile));
    addField("cursorColor",   TypeColorI,     Offset(mCursorColor, GuiControlProfile));
 
    addField("bitmap",        TypeFilename,   Offset(mBitmapName, GuiControlProfile));
@@ -701,10 +729,11 @@ void GuiControlProfile::incRefCount()
 {
 	if(!mRefCount)
 	{
-		sFontCacheDirectory = Con::getVariable("$GUI::fontCacheDirectory");
+		if(mFontDirectory == StringTable->EmptyString)
+			mFontDirectory = Con::getVariable("$GUI::fontCacheDirectory");
 
 		//verify the font
-		mFont = GFont::create(mFontType, mFontSize, sFontCacheDirectory);
+		mFont = GFont::create(mFontType, mFontSize, mFontDirectory);
 		if (mFont.isNull())
 			Con::errorf("Failed to load/create profile font (%s/%d)", mFontType, mFontSize);
 
@@ -811,6 +840,21 @@ const ColorI& GuiControlProfile::getFontColor(const GuiControlState state)
 		return mFontColorNA;
 		break;
 	}
+}
+
+bool GuiControlProfile::usesAssetRendering(const GuiControlState state)
+{
+	return mImageAsset != NULL && mImageAsset->isAssetValid() && mImageAsset->getFrameCount() > state;
+}
+
+bool GuiControlProfile::usesBitmapRendering(const GuiControlState state)
+{
+	return !usesAssetRendering(state) && mBitmapName != NULL && constructBitmapArray() > state;
+}
+
+bool GuiControlProfile::usesDefaultRendering(const GuiControlState state)
+{
+	return !usesAssetRendering(state) && !usesBitmapRendering(state);
 }
 
 ConsoleType( GuiProfile, TypeGuiProfile, sizeof(GuiControlProfile*), "" )

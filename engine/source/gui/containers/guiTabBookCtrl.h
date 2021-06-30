@@ -91,10 +91,9 @@ private:
    S32                     mMinTabWidth;     ///< Minimum Width a tab will display as.
    TabPosition             mTabPosition;     ///< Current tab position (see alignment)
    TabPosition             mLastTabPosition; ///< Last known tab position, stored to compare to tabPosition to know when to resize children
-   S32                     mLastFontHeight;  ///< Last known font height
-   S32                     mTabWidth;        ///< Current tab width
-   S32                     mLastTabWidth;    ///< Last know tab width, stored to compare to current tabWidth to know when to resize children
-
+   S32                     mFontHeight;      ///< Last known font height
+   S32                     mTabWidth;        ///< Current tab width of the first tab
+   
    enum
    {
 		TabSelected = 0,		///< Index of selected tab texture
@@ -144,10 +143,6 @@ private:
    /// @param   tabRect   the rectangle to render the tab into
    /// @param   tab   pointer to the tab page control for which to render the tab
    void renderTab( RectI tabRect, GuiTabPageCtrl* tab );
-
-   void renderJustifiedTextRot(Point2I offset, Point2I extent, const char *text, F32 rot );
-
-
    /// @}
 
    /// @name Page Management

@@ -54,12 +54,13 @@ function AssetDictionary::load(%this)
 				Class = AssetDictionaryButton;
 				HorizSizing="center";
 				VertSizing="center";
+				Extent = "100 100";
 				Tooltip = AssetDatabase.getAssetName(%assetID);
 				Text = "";
 				AssetID = %assetID;
 				Type = %this.Type;
 			};
-			ThemeManager.setProfile(%button, "buttonProfile");
+			ThemeManager.setProfile(%button, "itemSelectProfile");
 			ThemeManager.setProfile(%button, "tipProfile", "TooltipProfile");
 			%this.grid.add(%button);
 		}

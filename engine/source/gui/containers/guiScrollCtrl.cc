@@ -150,7 +150,6 @@ void GuiScrollCtrl::setControlThumbProfile(GuiControlProfile* prof)
 	mThumbProfile = prof;
 	if (mAwake)
 		mThumbProfile->incRefCount();
-
 }
 
 void GuiScrollCtrl::setControlTrackProfile(GuiControlProfile* prof)
@@ -163,7 +162,6 @@ void GuiScrollCtrl::setControlTrackProfile(GuiControlProfile* prof)
 	mTrackProfile = prof;
 	if (mAwake)
 		mTrackProfile->incRefCount();
-
 }
 
 void GuiScrollCtrl::setControlArrowProfile(GuiControlProfile* prof)
@@ -176,7 +174,6 @@ void GuiScrollCtrl::setControlArrowProfile(GuiControlProfile* prof)
 	mArrowProfile = prof;
 	if (mAwake)
 		mArrowProfile->incRefCount();
-
 }
 
 GuiControl* GuiScrollCtrl::findHitControl(const Point2I& pt, S32 initialLayer)
@@ -286,13 +283,12 @@ void GuiScrollCtrl::computeSizes()
 			mVBarEnabled = true;
 
 		//Are we now over-scrolled?
-		if ((mScrollOffset.x + mContentExt.x) > mChildExt.x)
-			mScrollOffset.x = getMax(mChildExt.x - mContentExt.x, 0);
-		if ((mScrollOffset.y + mContentExt.y) > mChildExt.y)
-			mScrollOffset.y = getMax(mChildExt.y - mContentExt.y, 0);
+		calcScrollOffset();
 	}
 	// build all the rectangles and such...
-	calcScrollRects();
+	RectI ctrlRect = applyMargins(Point2I(mBounds.point.Zero), mBounds.extent, NormalState, mProfile);
+	RectI fillRect = applyBorders(ctrlRect.point, ctrlRect.extent, NormalState, mProfile);
+	calcScrollRects(fillRect);
 	calcThumbs();
 }
 
@@ -318,12 +314,16 @@ bool GuiScrollCtrl::calcChildExtents()
 	return true;
 }
 
-
-void GuiScrollCtrl::calcScrollRects(void)
+void GuiScrollCtrl::calcScrollOffset()
 {
-	RectI ctrlRect = applyMargins(mBounds.point.Zero, mBounds.extent, NormalState, mProfile);
-	RectI fillRect = applyBorders(ctrlRect.point, ctrlRect.extent, NormalState, mProfile);
+	if ((mScrollOffset.x + mContentExt.x) > mChildExt.x)
+		mScrollOffset.x = getMax(mChildExt.x - mContentExt.x, 0);
+	if ((mScrollOffset.y + mContentExt.y) > mChildExt.y)
+		mScrollOffset.y = getMax(mChildExt.y - mContentExt.y, 0);
+}
 
+void GuiScrollCtrl::calcScrollRects(RectI &fillRect)
+{
 	if (mHasVScrollBar)
 	{
 		RectI vScrollRect = RectI(fillRect.point.x + fillRect.extent.x - mScrollBarThickness, fillRect.point.y, mScrollBarThickness, fillRect.extent.y);
@@ -423,9 +423,6 @@ void GuiScrollCtrl::scrollTo(S32 x, S32 y)
 {
    if(!size())
       return;
-
-    // keep scroll start state
-    Point2I startPoint = Point2I(0,0);
 
    setUpdate();
    if (x > mChildExt.x - mContentExt.x)
@@ -534,7 +531,7 @@ void GuiScrollCtrl::scrollRectVisible(RectI rect)
 
 	// Determine the points bounding the actual visible area...
 	Point2I visUpperLeft = mScrollOffset;
-	Point2I visLowerRight = mContentExt;
+	Point2I visLowerRight = mContentExt + mScrollOffset;
 	Point2I delta(0, 0);
 
 	// We basically try to make sure that first the top left of the given
