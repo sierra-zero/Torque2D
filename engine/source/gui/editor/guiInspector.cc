@@ -406,6 +406,24 @@ ConsoleMethod(GuiInspector, addHiddenField, void, 3, 3, "() Adds a new field to 
 {
 	object->addHiddenField(argv[2]);
 }
+
+ConsoleMethod(GuiInspector, openGroupByIndex, void, 3, 3, "(Index) Opens the group that matches the given zero-based index\n"
+	"@return No return value.")
+{
+	if (argc < 1)
+	{
+		return;
+	}
+
+	S32 index = dAtoi(argv[2]);
+
+	if (index >= object->mGroups.size())
+	{
+		return;
+	}
+
+	object->mGroups[index]->setExpanded(true);
+}
 #pragma endregion
 
 #pragma region GuiInspectorField
@@ -565,7 +583,8 @@ bool GuiInspectorField::onAdd()
 	setControlProfile(mGroup->mInspector->mLabelProfile);
 
 	//Find the target width
-	RectI innerRect = getInnerRect(Point2I(0,0), mGroup->mInspector->mFieldCellSize, NormalState, mProfile);
+   Point2I origin = Point2I(0,0);
+	RectI innerRect = getInnerRect(origin, mGroup->mInspector->mFieldCellSize, NormalState, mProfile);
 	mEdit = constructEditControl(innerRect.extent.x);
 
 	if( mEdit == NULL )

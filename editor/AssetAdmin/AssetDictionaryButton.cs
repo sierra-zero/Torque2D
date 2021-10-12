@@ -23,7 +23,6 @@
 function AssetDictionaryButton::onAdd(%this)
 {
 	%this.call("load" @ %this.type, %this.assetID);
-	%this.assetID = "";
 }
 
 function AssetDictionaryButton::loadImageAsset(%this, %assetID)
@@ -131,6 +130,7 @@ function AssetDictionaryButton::buildIcon(%this)
 
 function AssetDictionaryButton::onClick(%this)
 {
+	%firstLoad = false;
 	if(AssetAdmin.chosenButton != %this)
 	{
 		if(isObject(AssetAdmin.chosenButton))
@@ -138,6 +138,8 @@ function AssetDictionaryButton::onClick(%this)
 			ThemeManager.setProfile(AssetAdmin.chosenButton, "itemSelectProfile");
 		}
 		ThemeManager.setProfile(%this, "itemSelectedProfile");
+		%firstLoad = true;
+		AssetAdmin.AssetWindow.resetCamera();
 	}
 
 	AssetAdmin.audioPlayButtonContainer.setVisible(false);
@@ -146,32 +148,50 @@ function AssetDictionaryButton::onClick(%this)
 	if(isObject(%this.AnimationAsset) && %this.AnimationAssetID !$= "")
 	{
 		AssetAdmin.AssetWindow.displayAnimationAsset(%this.imageAsset, %this.AnimationAsset, %this.AnimationAssetID);
-		AssetAdmin.inspector.loadAnimationAsset(%this.AnimationAsset, %this.AnimationAssetID);
+		if(%firstLoad)
+		{
+			AssetAdmin.inspector.loadAnimationAsset(%this.AnimationAsset, %this.AnimationAssetID);
+		}
 	}
 	else if(isObject(%this.ImageAsset) && %this.ImageAssetID !$= "")
 	{
 		AssetAdmin.AssetWindow.displayImageAsset(%this.ImageAsset, %this.ImageAssetID);
-		AssetAdmin.inspector.loadImageAsset(%this.ImageAsset, %this.ImageAssetID);
+		if(%firstLoad)
+		{
+			AssetAdmin.inspector.loadImageAsset(%this.ImageAsset, %this.ImageAssetID);
+		}
 	}
 	else if(isObject(%this.ParticleAsset) && %this.ParticleAssetID !$= "")
 	{
 		AssetAdmin.AssetWindow.displayParticleAsset(%this.ParticleAsset, %this.ParticleAssetID);
-		AssetAdmin.inspector.loadParticleAsset(%this.ParticleAsset, %this.ParticleAssetID);
+		if(%firstLoad)
+		{
+			AssetAdmin.inspector.loadParticleAsset(%this.ParticleAsset, %this.ParticleAssetID);
+		}
 	}
 	else if(isObject(%this.FontAsset) && %this.FontAssetID !$= "")
 	{
 		AssetAdmin.AssetWindow.displayFontAsset(%this.FontAsset, %this.FontAssetID);
-		AssetAdmin.inspector.loadFontAsset(%this.FontAsset, %this.FontAssetID);
+		if(%firstLoad)
+		{
+			AssetAdmin.inspector.loadFontAsset(%this.FontAsset, %this.FontAssetID);
+		}
 	}
 	else if(isObject(%this.AudioAsset) && %this.AudioAssetID !$= "")
 	{
 		AssetAdmin.AssetWindow.displayAudioAsset(%this.AudioAsset, %this.AudioAssetID);
-		AssetAdmin.inspector.loadAudioAsset(%this.AudioAsset, %this.AudioAssetID);
+		if(%firstLoad)
+		{
+			AssetAdmin.inspector.loadAudioAsset(%this.AudioAsset, %this.AudioAssetID);
+		}
 	}
 	else if(isObject(%this.SpineAsset) && %this.SpineAssetID !$= "")
 	{
 		AssetAdmin.AssetWindow.displaySpineAsset(%this.SpineAsset, %this.SpineAssetID);
-		AssetAdmin.inspector.loadSpineAsset(%this.SpineAsset, %this.SpineAssetID);
+		if(%firstLoad)
+		{
+			AssetAdmin.inspector.loadSpineAsset(%this.SpineAsset, %this.SpineAssetID);
+		}
 	}
 
 	AssetAdmin.chosenButton = %this;

@@ -22,9 +22,19 @@
 
 function AssetDictionary::onAdd(%this)
 {
+	%this.newButton = new GuiButtonCtrl()
+	{
+		class = "NewAssetButton";
+		Position = "5 27";
+		Extent = "300 30";
+		Text = "New";
+	};
+	ThemeManager.setProfile(%this.newButton, "buttonProfile");
+	%this.add(%this.newButton);
+
 	%this.grid = new GuiGridCtrl()
 	{
-		Position="0 22";
+		Position="0 62";
 		Extent = "310 50";
 		CellSizeX = 60;
 		CellSizeY = 60;
@@ -49,23 +59,69 @@ function AssetDictionary::load(%this)
 
 		if(!AssetDatabase.isAssetInternal(%assetID))
 		{
-			%button = new GuiButtonCtrl()
-			{
-				Class = AssetDictionaryButton;
-				HorizSizing="center";
-				VertSizing="center";
-				Extent = "100 100";
-				Tooltip = AssetDatabase.getAssetName(%assetID);
-				Text = "";
-				AssetID = %assetID;
-				Type = %this.Type;
-			};
-			ThemeManager.setProfile(%button, "itemSelectProfile");
-			ThemeManager.setProfile(%button, "tipProfile", "TooltipProfile");
-			%this.grid.add(%button);
+			%this.addButton(%assetID);
 		}
 	}
 	%query.delete();
+
+	%this.newButton.text = "New" SPC %this.type;
+	%this.newButton.type = %this.type;
+}
+
+function AssetDictionary::addButton(%this, %assetID)
+{
+	%button = new GuiButtonCtrl()
+	{
+		Class = AssetDictionaryButton;
+		HorizSizing="center";
+		VertSizing="center";
+		Extent = "100 100";
+		Tooltip = AssetDatabase.getAssetName(%assetID);
+		Text = "";
+		AssetID = %assetID;
+		Type = %this.Type;
+	};
+	ThemeManager.setProfile(%button, "itemSelectProfile");
+	ThemeManager.setProfile(%button, "tipProfile", "TooltipProfile");
+	%this.grid.add(%button);
+
+	%this.fixSize();
+
+	return %button;
+}
+
+function AssetDictionary::removeButton(%this, %assetID)
+{
+	%button = %this.getButton(%assetID);
+	if(isObject(%button))
+	{
+		%button.delete();
+		%this.fixSize();
+		return true;
+	}
+	return false;
+}
+
+function AssetDictionary::fixSize(%this)
+{
+	if(%this.getExpanded())
+	{
+		%this.setExpanded(false);
+		%this.setExpanded(true);
+	}
+}
+
+function AssetDictionary::getButton(%this, %assetID)
+{
+	for(%i = 0; %i < %this.grid.getCount(); %i++)
+	{
+		%button = %this.grid.getObject(%i);
+		if(%button.AssetID $= %assetID)
+		{
+			return %button;
+		}
+	}
+	return 0;
 }
 
 function AssetDictionary::unload(%this)
@@ -76,21 +132,12 @@ function AssetDictionary::unload(%this)
 		%obj = %this.grid.getObject(%i);
 		%obj.delete();
 	}
+}
 
-	//release all the assets we loaded for this - might take them out of memory
-	// %query = new AssetQuery();
-	// AssetDatabase.findAllAssets(%query);
-	// AssetDatabase.findAssetType(%query, %this.Type, true);
-	//
-	// for(%i = 0; %i < %query.getCount(); %i++)
-	// {
-	// 	%assetID = %query.getAsset(%i);
-	// 	if(!AssetDatabase.isAssetInternal(%assetID))
-	// 	{
-	// 		AssetDatabase.releaseAsset(%assetID);
-	// 	}
-	// }
-	// %query.delete();
+function AssetDictionary::reload(%this)
+{
+	%this.unload();
+	%this.load();
 }
 
 function AssetDictionarySprite::onAnimationEnd(%this, %animationAssetID)

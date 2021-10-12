@@ -25,15 +25,22 @@ function AssetWindow::onAdd(%this)
 
 }
 
+function AssetWindow::resetCamera(%this)
+{
+	%this.setCameraPosition("0 0");
+	%this.setCameraZoom(1);
+}
+
 function AssetWindow::displayImageAsset(%this, %imageAsset, %assetID)
 {
 	AssetAdmin.AssetScene.clear(true);
 
-	%this.setCameraPosition("0 0");
-	%this.setCameraZoom(1);
+	%size = %this.getWorldSize(%imageAsset.getImageSize());
+	%sizeX = getWord(%size, 0);
+	%sizeY = getWord(%size, 1);
+
 	if(!%imageAsset.getExplicitMode() && %imageAsset.getFrameCount() == 1)
 	{
-		%size = %this.getWorldSize(%imageAsset.getFrameSize(0));
 		new Sprite()
 		{
 			Scene = AssetAdmin.AssetScene;
@@ -50,16 +57,6 @@ function AssetWindow::displayImageAsset(%this, %imageAsset, %assetID)
 		%cellCountX = %imageAsset.getCellCountX();
 		%cellCountY = %imageAsset.getCellCountY();
 
-		%cellWidth = %imageAsset.getCellWidth();
-		%cellHeight = %imageAsset.getCellHeight();
-
-		%imageSizeX = %cellWidth * %cellCountX;
-		%imageSizeY = %cellHeight * %cellCountY;
-
-		%size = %this.getWorldSize(%imageSizeX SPC %imageSizeY);
-		%sizeX = getWord(%size, 0);
-		%sizeY = getWord(%size, 1);
-
 		%worldCellWidth = %sizeX / %cellCountX;
 		%worldCellHeight = %sizeY / %cellCountY;
 
@@ -71,7 +68,7 @@ function AssetWindow::displayImageAsset(%this, %imageAsset, %assetID)
 				{
 					Scene = AssetAdmin.AssetScene;
 					Image = %assetID;
-					Frame = (%j * %imageAsset.getCellCountX()) + %i;
+					Frame = (%j * %cellCountX) + %i;
 					size = Vector2Scale(%worldCellWidth SPC %worldCellHeight, 2.8);
 					position = ((%worldCellWidth * %i) + (%worldCellWidth/2) - (%sizeX/2)) SPC ((-%worldCellHeight * %j) - (%worldCellHeight/2) + (%sizeY/2));
 					BlendColor = "1 1 1 0";
@@ -84,14 +81,42 @@ function AssetWindow::displayImageAsset(%this, %imageAsset, %assetID)
 			}
 		}
 	}
+	else if(%imageAsset.getExplicitMode())
+	{
+		for(%i = 0; %i < %imageAsset.getExplicitCellCount(); %i++)
+		{
+			%worldCellWidth = %sizeX * (%imageAsset.getExplicitCellWidth(%i) / %imageAsset.getImageWidth());
+			%worldCellHeight = %sizeY * (%imageAsset.getExplicitCellHeight(%i) / %imageAsset.getImageHeight());
+
+			%offset = %imageAsset.getExplicitCellOffset(%i);
+			%offsetX = getWord(%offset, 0);
+			%offsetY = getWord(%offset, 1);
+
+			%worldCellOffsetX = (%sizeX * (%offsetX / %imageAsset.getImageWidth())) - (%sizeX / 2) + (%worldCellWidth / 2);
+			%worldCellOffsetY = (%sizeY - (%sizeY * (%offsetY / %imageAsset.getImageHeight()))) - (%sizeY / 2) - (%worldCellHeight / 2);
+
+			%sprite = new Sprite()
+			{
+				Scene = AssetAdmin.AssetScene;
+				Image = %assetID;
+				Frame = %i;
+				size = Vector2Scale(%worldCellWidth SPC %worldCellHeight, 2.8);
+				position = %worldCellOffsetX SPC %worldCellOffsetY;
+				BlendColor = "1 1 1 0";
+				SceneLayer = 1;
+				BodyType = static;
+			};
+
+			%sprite.growToTime(Vector2Scale(%worldCellWidth SPC %worldCellHeight, 0.94), 225 + (%i * 20));
+			%sprite.fadetoTime("1 1 1 1", 225 + (%i * 20));
+		}
+	}
 }
 
 function AssetWindow::displayAnimationAsset(%this, %imageAsset, %animationAsset, %assetID)
 {
 	AssetAdmin.AssetScene.clear(true);
 
-	%this.setCameraPosition("0 0");
-	%this.setCameraZoom(1);
 	%size = %this.getWorldSize(%imageAsset.getFrameSize(0));
 	new Sprite()
 	{
@@ -109,8 +134,6 @@ function AssetWindow::displayParticleAsset(%this, %particleAsset, %assetID)
 {
 	AssetAdmin.AssetScene.clear(true);
 
-	%this.setCameraPosition("0 0");
-	%this.setCameraZoom(5);
 	new ParticlePlayer()
 	{
 		Scene = AssetAdmin.AssetScene;
@@ -127,8 +150,6 @@ function AssetWindow::displayFontAsset(%this, %fontAsset, %assetID)
 {
 	AssetAdmin.AssetScene.clear(true);
 
-	%this.setCameraPosition("0 0");
-	%this.setCameraZoom(1);
 	%size = %this.getWorldSize("10 10");
 	new TextSprite()
 	{

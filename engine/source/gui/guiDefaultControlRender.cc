@@ -206,16 +206,25 @@ void renderSizableBorderedImageAsset(RectI &bounds, U8 frame, ImageAsset *imageA
 		const ImageAsset::FrameArea::PixelArea& pixelArea8 = imageAsset->getImageFrameArea((U32)i+7).mPixelArea;
 		const ImageAsset::FrameArea::PixelArea& pixelArea9 = imageAsset->getImageFrameArea((U32)i+8).mPixelArea;
 
+		RectI topleft     = pixelArea1.toRectI();
+		RectI top         = RectI(pixelArea2.mPixelOffset, Point2I(pixelArea2.mPixelWidth, pixelArea2.mPixelHeight));
+		RectI topright    = RectI(pixelArea3.mPixelOffset, Point2I(pixelArea3.mPixelWidth, pixelArea3.mPixelHeight));
+		RectI left        = RectI(pixelArea4.mPixelOffset, Point2I(pixelArea4.mPixelWidth, pixelArea4.mPixelHeight));
+		RectI fill        = RectI(pixelArea5.mPixelOffset, Point2I(pixelArea5.mPixelWidth, pixelArea5.mPixelHeight));
+		RectI right       = RectI(pixelArea6.mPixelOffset, Point2I(pixelArea6.mPixelWidth, pixelArea6.mPixelHeight));
+		RectI bottomleft  = RectI(pixelArea7.mPixelOffset, Point2I(pixelArea7.mPixelWidth, pixelArea7.mPixelHeight));
+		RectI bottom      = RectI(pixelArea8.mPixelOffset, Point2I(pixelArea8.mPixelWidth, pixelArea8.mPixelHeight));
+		RectI bottomright = RectI(pixelArea9.mPixelOffset, Point2I(pixelArea9.mPixelWidth, pixelArea9.mPixelHeight));
 		renderSizableBorderedTexture(bounds, imageAsset->getImageTexture(), 
-			pixelArea1.toRectI(),
-			RectI(pixelArea2.mPixelOffset, Point2I(pixelArea2.mPixelWidth, pixelArea2.mPixelHeight)),
-			RectI(pixelArea3.mPixelOffset, Point2I(pixelArea3.mPixelWidth, pixelArea3.mPixelHeight)), 
-			RectI(pixelArea4.mPixelOffset, Point2I(pixelArea4.mPixelWidth, pixelArea4.mPixelHeight)), 
-			RectI(pixelArea5.mPixelOffset, Point2I(pixelArea5.mPixelWidth, pixelArea5.mPixelHeight)), 
-			RectI(pixelArea6.mPixelOffset, Point2I(pixelArea6.mPixelWidth, pixelArea6.mPixelHeight)), 
-			RectI(pixelArea7.mPixelOffset, Point2I(pixelArea7.mPixelWidth, pixelArea7.mPixelHeight)), 
-			RectI(pixelArea8.mPixelOffset, Point2I(pixelArea8.mPixelWidth, pixelArea8.mPixelHeight)), 
-			RectI(pixelArea9.mPixelOffset, Point2I(pixelArea9.mPixelWidth, pixelArea9.mPixelHeight)));
+			topleft,
+			top, 
+			topright, 
+			left, 
+			fill, 
+			right, 
+			bottomleft, 
+			bottom, 
+			bottomright);
 	}
 }
 
@@ -250,7 +259,6 @@ void renderSizableBorderedTexture(RectI &bounds, TextureHandle &texture, RectI &
 	destRect.extent.y = Top.extent.y;
 	destRect.point.y = bounds.point.y;
 	stretchRect = Top;
-	stretchRect.inset(1, 0);
 	dglDrawBitmapStretchSR(texture, destRect, stretchRect);
 
 	//bottom line stretch
@@ -259,7 +267,6 @@ void renderSizableBorderedTexture(RectI &bounds, TextureHandle &texture, RectI &
 	destRect.extent.y = Bottom.extent.y;
 	destRect.point.y = bounds.point.y + bounds.extent.y - Bottom.extent.y;
 	stretchRect = Bottom;
-	stretchRect.inset(1, 0);
 	dglDrawBitmapStretchSR(texture, destRect, stretchRect);
 
 	//left line stretch
@@ -268,7 +275,6 @@ void renderSizableBorderedTexture(RectI &bounds, TextureHandle &texture, RectI &
 	destRect.extent.y = bounds.extent.y - TopLeft.extent.y - BottomLeft.extent.y;
 	destRect.point.y = bounds.point.y + TopLeft.extent.y;
 	stretchRect = Left;
-	stretchRect.inset(0, 1);
 	dglDrawBitmapStretchSR(texture, destRect, stretchRect);
 
 	//right line stretch
@@ -277,7 +283,6 @@ void renderSizableBorderedTexture(RectI &bounds, TextureHandle &texture, RectI &
 	destRect.extent.y = bounds.extent.y - TopRight.extent.y - BottomRight.extent.y;
 	destRect.point.y = bounds.point.y + TopRight.extent.y;
 	stretchRect = Right;
-	stretchRect.inset(0, 1);
 	dglDrawBitmapStretchSR(texture, destRect, stretchRect);
 
 	//fill stretch
@@ -286,7 +291,6 @@ void renderSizableBorderedTexture(RectI &bounds, TextureHandle &texture, RectI &
 	destRect.extent.y = bounds.extent.y - Top.extent.y - Bottom.extent.y;
 	destRect.point.y = bounds.point.y + Top.extent.y;
 	stretchRect = Fill;
-	stretchRect.inset(1, 1);
 	dglDrawBitmapStretchSR(texture, destRect, stretchRect);
 }
 
@@ -320,7 +324,6 @@ void renderFixedBitmapBordersFilled(RectI &bounds, S32 baseMultiplier, GuiContro
       destRect.point.y = bounds.point.y;
       //stretch it
       stretchRect = mBitmapBounds[Fill];
-      stretchRect.inset(1,0);
       //draw it
       dglDrawBitmapStretchSR(profile->mTextureHandle,destRect,stretchRect);
    }

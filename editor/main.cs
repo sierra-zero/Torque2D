@@ -22,14 +22,12 @@
 
 new ModuleManager(EditorManager);
 EditorManager.addListener(AssetDatabase);
+EditorManager.EchoInfo = false;
 
 // Scans for the modules that make up the editors.
-EditorManager.scanModules( "." );
-
-// Load the central module
-EditorManager.LoadGroup( "EditorGroup" );
+EditorManager.scanModules( "./" );
 
 // Load various editors
 EditorManager.LoadExplicit("EditorConsole");
-Editormanager.LoadExplicit("ProjectManager");
+//Editormanager.LoadExplicit("ProjectManager");//Someday...
 EditorManager.LoadExplicit("AssetAdmin");

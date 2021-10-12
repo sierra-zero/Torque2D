@@ -258,16 +258,26 @@ void GuiControl::addObject(SimObject *object)
   GuiControl *parent = ctrl->getParent();
   if( parent )
      parent->onChildAdded( ctrl );
-
-
 }
 
 void GuiControl::removeObject(SimObject *object)
 {
+	GuiControl *ctrl = dynamic_cast<GuiControl *>(object);
+	if (!ctrl)
+	{
+		AssertWarn(0, "GuiControl::removeObject: attempted to remove NON GuiControl from set");
+		return;
+	}
+	GuiControl *parent = ctrl->getParent();
+
    AssertFatal(mAwake == static_cast<GuiControl*>(object)->isAwake(), "GuiControl::removeObject: child control wake state is bad");
    if (mAwake)
       static_cast<GuiControl*>(object)->sleep();
     Parent::removeObject(object);
+
+	// If we are a child, notify our parent that we've been removed
+	if (parent)
+		parent->onChildRemoved(ctrl);
 }
 
 GuiControl *GuiControl::getParent()
@@ -432,7 +442,8 @@ void GuiControl::parentResized(const Point2I &oldParentExtent, const Point2I &ne
 	if(mHorizSizing == horizResizeCenter || mVertSizing == vertResizeCenter)
 	{
 		//This is based on the "new" outer extent of the parent.
-		parentInnerExt = getInnerRect(Point2I(0, 0), parent->mBounds.extent, NormalState, parent->mProfile).extent;
+      Point2I origin = Point2I(0, 0);
+		parentInnerExt = getInnerRect(origin, parent->mBounds.extent, NormalState, parent->mProfile).extent;
 	}
 
     if (mHorizSizing == horizResizeCenter)
@@ -1010,7 +1021,6 @@ void GuiControl::setControlProfile(GuiControlProfile *prof)
    mProfile = prof;
    if(mAwake)
       mProfile->incRefCount();
-
 }
 
 void GuiControl::onPreRender()
@@ -1657,6 +1667,11 @@ void GuiControl::makeFirstResponder(bool value)
 void GuiControl::setActive( bool value )
 {
    mActive = value;
+
+   if (value && isMethod("onActive"))
+	   Con::executef(this, 1, "onActive");
+	else if (!value && isMethod("onInactive"))
+		Con::executef(this, 1, "onInactive");
 
    if ( !mActive )
       clearFirstResponder();
